@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 
 def create_table(table_name: str, columns: list[str]) -> bool:
     """
-    Supabase에 새로운 테이블을 생성합니다. 모든 컬럼을 TEXT 타입으로 설정하여 타입 호환성을 보장합니다.
+    Supabase에 새로운 테이블을 생성합니다. TEXT 타입을 사용하여 호환성을 보장합니다.
     """
     try:
         if not columns:
@@ -26,7 +26,9 @@ def create_table(table_name: str, columns: list[str]) -> bool:
             created_at TIMESTAMP DEFAULT now()
         );
         """
-        response = supabase.rpc("execute_sql", {"sql": create_table_query}).execute()
+
+        # Supabase의 SQL API 엔드포인트를 직접 호출하여 실행
+        response = supabase.post("/rest/v1/rpc/sql", json={"q": create_table_query}).execute()
 
         if response.error:
             logging.error(f"🚨 테이블 생성 오류: {response.error}")
@@ -38,7 +40,6 @@ def create_table(table_name: str, columns: list[str]) -> bool:
     except Exception as e:
         logging.error(f"🚨 테이블 생성 중 오류 발생: {e}")
         return False
-
 
 def insert_data(table_name: str, data: list[dict]) -> bool:
     """
