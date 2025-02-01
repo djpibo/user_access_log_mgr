@@ -30,12 +30,13 @@ def create_table(table_name: str, columns: list[str]) -> bool:
         # Supabase의 SQL API 엔드포인트를 직접 호출하여 실행
         response = supabase.rpc("execute_sql", {"sql": create_table_query}).execute()
 
-        if response.error:
-            logging.error(f"🚨 테이블 생성 오류: {response.error}")
+        # ✅ 응답 데이터 확인 (204 = No Content → 성공)
+        if response.status_code == 204:
+            logging.info(f"✅ 테이블 '{table_name}' 생성 완료")
+            return True
+        else:
+            logging.error(f"🚨 테이블 생성 오류: {response.data}")
             return False
-
-        logging.info(f"✅ 테이블 '{table_name}' 생성 완료")
-        return True
 
     except Exception as e:
         logging.error(f"🚨 테이블 생성 중 오류 발생: {e}")
