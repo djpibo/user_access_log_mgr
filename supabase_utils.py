@@ -1,5 +1,4 @@
 from supabase import create_client, Client
-import os
 
 # Supabase 연결 설정
 SUPABASE_URL = "https://sgymfpbnlbqeelbfiguc.supabase.co"
@@ -20,7 +19,6 @@ def create_table(table_name: str, columns: list[str]) -> bool:
             created_at TIMESTAMP DEFAULT now()
         );
         """
-
         response = supabase.rpc("execute_sql", {"sql": create_table_query}).execute()
         return response.error is None
     except Exception as e:
