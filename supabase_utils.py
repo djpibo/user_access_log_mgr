@@ -56,12 +56,13 @@ def insert_data(table_name: str, data: list[dict]) -> bool:
 
         response = supabase.table(table_name).insert(formatted_data).execute()
 
-        if response.error:
-            logging.error(f"🚨 데이터 삽입 오류: {response.error}")
+        # ✅ 응답 데이터 확인 (204 = No Content → 성공)
+        if response.status_code == 204:
+            logging.info(f"✅ 테이블 '{table_name}' 생성 완료")
+            return True
+        else:
+            logging.error(f"🚨 테이블 생성 오류: {response.data}")
             return False
-
-        logging.info(f"✅ 데이터 삽입 완료 ({len(data)} rows)")
-        return True
 
     except Exception as e:
         logging.error(f"🚨 데이터 삽입 중 오류 발생: {e}")
