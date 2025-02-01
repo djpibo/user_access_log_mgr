@@ -1,5 +1,4 @@
 import pandas as pd
-import openpyxl
 import logging
 
 # 로깅 설정
