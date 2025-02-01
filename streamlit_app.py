@@ -6,7 +6,7 @@ from supabase_utils import create_table, insert_data
 st.title("EXCEL UPLOAD")
 
 # 📂 엑셀 파일 업로드
-uploaded_file = st.file_uploader("엑셀 파일을 업로드", type=["xlsx"])
+uploaded_file = st.file_uploader("STEP 1) 엑셀 파일을 업로드", type=["xlsx"])
 
 if uploaded_file:
     # ✅ 엑셀 시트 목록 가져오기
@@ -17,7 +17,7 @@ if uploaded_file:
         st.stop()
 
     # 📑 사용자가 시트 선택
-    selected_sheet = st.selectbox("시트 선택", excel_sheets)
+    selected_sheet = st.selectbox("STEP 2) 시트 선택", excel_sheets)
 
     if selected_sheet:
         # ✅ 선택한 시트 데이터 불러오기
@@ -34,7 +34,7 @@ if uploaded_file:
 
         # 🔠 Supabase 테이블명 입력 (기본값: 시트 이름)
         default_table_name = selected_sheet.replace(" ", "_").lower()
-        table_name = st.text_input("Supabase 테이블 이름 입력", default_table_name)
+        table_name = st.text_input("STEP 3) 테이블명 입력", default_table_name)
 
         if st.button("DB INSERT"):
             columns = get_column_names(df)

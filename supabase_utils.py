@@ -28,7 +28,7 @@ def create_table(table_name: str, columns: list[str]) -> bool:
         """
 
         # Supabase의 SQL API 엔드포인트를 직접 호출하여 실행
-        response = supabase.post("/rest/v1/rpc/sql", json={"q": create_table_query}).execute()
+        response = supabase.rpc("execute_sql", {"sql": create_table_query}).execute()
 
         if response.error:
             logging.error(f"🚨 테이블 생성 오류: {response.error}")
