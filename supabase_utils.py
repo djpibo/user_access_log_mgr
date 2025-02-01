@@ -28,15 +28,14 @@ def create_table(table_name: str, columns: list[str]) -> bool:
         """
 
         # Supabase의 SQL API 엔드포인트를 직접 호출하여 실행
-        response = supabase.rpc("execute_sql", {"sql": create_table_query}).execute()
+        response = supabase.rpc("execute_sql", {"sql": create_table_query}, ).execute()
 
-        # ✅ 응답 데이터 확인 (204 = No Content → 성공)
-        if response.status_code == 204:
-            logging.info(f"✅ 테이블 '{table_name}' 생성 완료")
-            return True
-        else:
+        if response.data is None:
             logging.error(f"🚨 테이블 생성 오류: {response.data}")
             return False
+        else:
+            logging.info(f"✅ 테이블 '{table_name}' 생성 완료")
+            return True
 
     except Exception as e:
         logging.error(f"🚨 테이블 생성 중 오류 발생: {e}")
@@ -57,13 +56,12 @@ def insert_data(table_name: str, data: list[dict]) -> bool:
 
         response = supabase.table(table_name).insert(formatted_data).execute()
 
-        # ✅ 응답 데이터 확인 (204 = No Content → 성공)
-        if response.status_code == 204:
-            logging.info(f"✅ 테이블 '{table_name}' 생성 완료")
-            return True
-        else:
+        if response.data is None:
             logging.error(f"🚨 테이블 생성 오류: {response.data}")
             return False
+        else:
+            logging.info(f"✅ 테이블 '{table_name}' 생성 완료")
+            return True
 
     except Exception as e:
         logging.error(f"🚨 데이터 삽입 중 오류 발생: {e}")
