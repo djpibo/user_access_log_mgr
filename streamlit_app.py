@@ -1,67 +1,55 @@
 import streamlit as st
-from excel_utils import get_excel_sheets, read_excel_sheet, get_column_names, convert_to_records
-from supabase_utils import create_table, insert_data, upload_to_supabase
+import pandas as pd
+from supabase import create_client, Client
+from handler.file_handler import upload_to_supabase, download_from_supabase
+from handler.db_handler import create_table_if_not_exists, insert_data_into_supabase
 
-# Streamlit UI 설정
-st.title("EXCEL UPLOAD")
+# Supabase 연결 설정
+SUPABASE_URL = "https://sgymfpbnlbqeelbfiguc.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNneW1mcGJubGJxZWVsYmZpZ3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUzNDgyODQsImV4cCI6MjA1MDkyNDI4NH0.1TriuQfF99YycEgGowmiZskXWX08dMzyIpn9bOeswsM"
 
-# 📂 엑셀 파일 업로드
-uploaded_file = st.file_uploader("STEP 1) 엑셀 파일을 업로드", type=["xlsx"])
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# S3용 client
+SUPABASE_S3_KEY = "38c38450af2ddd3e4d9e47ee1a14415c"
+
+supabase_s3: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Streamlit UI
+st.title("📊 대용량 엑셀 파일 업로드 및 Supabase 저장")
+
+# 파일 업로드
+uploaded_file = st.file_uploader("📂 엑셀 파일을 업로드하세요", type=["xlsx", "csv"])
 
 if uploaded_file:
     file_name = uploaded_file.name
-    st.write(f"📁 파일 업로드: `{file_name}`")
 
-    # Supabase Storage에 파일 업로드
-    file_url = upload_to_supabase(uploaded_file, file_name)
-    st.success(f"✅ 파일이 Supabase에 업로드되었습니다: {file_url}")
+    # 1️⃣ 파일 업로드 버튼
+    with st.spinner("🔄 파일을 업로드하는 중..."):
+        message, file_url = upload_to_supabase(supabase_s3, uploaded_file, file_name)
+        st.info(message)
+    
+    # 2️⃣ 파일 다운로드 버튼
+    with st.spinner("🔄 파일을 다운로드하는 중..."):
+        file_path = download_from_supabase(supabase_s3, file_name)
+        st.success(f"✅ 파일 다운로드 완료: {file_name}")
 
-#
-# if uploaded_file:
-#     # ✅ 엑셀 시트 목록 가져오기
-#     excel_sheets = get_excel_sheets(uploaded_file)
-#
-#     if not excel_sheets:
-#         st.error("🚨 유효한 시트가 없습니다. 올바른 엑셀 파일을 업로드하세요.")
-#         st.stop()
-#
-#     # 📑 사용자가 시트 선택
-#     selected_sheet = st.selectbox("STEP 2) 시트 선택", excel_sheets)
-#
-#     if selected_sheet:
-#         # ✅ 선택한 시트 데이터 불러오기
-#         df = read_excel_sheet(uploaded_file, selected_sheet)
-#
-#         if df.empty:
-#             st.error(f"🚨 '{selected_sheet}' 시트에 데이터가 없습니다.")
-#             st.stop()
-#
-#         # 🔍 예상 컬럼명 미리보기
-#         st.write("")
-#         st.subheader("HEADER COLUMN")
-#         st.write(df.head(1))  # 첫 줄 미리보기
-#
-#         # 🔠 Supabase 테이블명 입력 (기본값: 시트 이름)
-#         default_table_name = selected_sheet.replace(" ", "_").lower()
-#         table_name = st.text_input("STEP 3) 테이블명 입력", default_table_name)
-#
-#         if st.button("DB INSERT"):
-#             columns = get_column_names(df)
-#
-#             if not columns:
-#                 st.error("🚨 유효한 컬럼이 없습니다.")
-#                 st.stop()
-#
-#             with st.spinner("⏳ 테이블 생성 중..."):
-#                 if create_table(table_name, columns):
-#                     st.success(f"✅ 테이블 '{table_name}' 생성 완료!")
-#                 else:
-#                     st.error("🚨 테이블 생성 오류 발생")
-#                     st.stop()
-#
-#             with st.spinner("⏳ 데이터 삽입 중..."):
-#                 data = convert_to_records(df)
-#                 if insert_data(table_name, data):
-#                     st.success(f"✅ 데이터 삽입 완료 ({len(data)} rows)")
-#                 else:
-#                     st.error("🚨 데이터 삽입 오류 발생")
+    # 3️⃣ 데이터 로드 및 미리보기 버튼
+        with st.spinner("🔄 데이터를 로드하는 중..."):
+            df = pd.read_excel(file_path) if file_name.endswith('.xlsx') else pd.read_csv(file_path)
+            st.write("📊 업로드된 데이터 미리보기 (상위 3줄)")
+            st.dataframe(df.head(3))
+
+    # 4️⃣ Supabase에 테이블 생성 버튼
+    default_table_name = file_name.split('.')[0]  # 확장자 제거한 파일명을 기본 테이블명으로 설정
+    table_name = st.text_input("📌 테이블 이름을 설정하세요:", value=default_table_name)
+
+    if st.button("🛠 테이블 생성"):
+        with st.spinner("🔄 테이블을 생성하는 중..."):
+            if create_table_if_not_exists(supabase, df):
+                st.success("✅ 테이블 생성 완료!")
+
+    # 5️⃣ 데이터 삽입 버튼
+    if st.button("📥 데이터 삽입"):
+        with st.spinner("🔄 Supabase에 데이터를 저장하는 중..."):
+            insert_data_into_supabase(supabase, df)
