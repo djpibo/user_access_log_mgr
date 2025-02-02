@@ -6,6 +6,9 @@ table_name = "uploaded_data"
 
 # Supabase에 테이블 존재 여부 확인 후 생성
 def create_table_if_not_exists(supabase: Client, df):
+       # 최대 50개 컬럼까지만 선택
+    df = df.iloc[:, :50]
+    
     column_definitions = ", ".join([f'"{col}" TEXT' for col in df.columns])
     query = f"""
     CREATE TABLE IF NOT EXISTS {table_name} (
